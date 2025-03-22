@@ -1,63 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import cvxpy as cp
-from geopy import distance
 
-################################################
-# Написать оптимальный маршрут
-################################################
-def show_path(ruta):
-    for i in ruta.keys():
-        print(i,' => '.join(map(str, ruta[i])))
-
-################################################
-# Нарисовать оптимальный маршрут
-################################################
-def plot_path(ruta, destinations_count, coords):
-    # Transforming the coords to the xy plane approximately
-    xy_cords = np.zeros((destinations_count, 2))
-
-    for i in range(0, destinations_count):
-        xy_cords[i,0] = distance.distance((coords[0][1],0), (coords[i][1],0)).km
-        xy_cords[i,1] = distance.distance((0,coords[0][0]), (0,coords[i][0])).km
-
-    # Plotting the coords
-    fig, ax = plt.subplots(figsize=(7,3))
-
-    for i in range(destinations_count):
-        ax.annotate(str(i), xy=(xy_cords[i,0], xy_cords[i,1]+0.1))
-
-    ax.scatter(xy_cords[:,0],xy_cords[:,1])
-    for i in ruta.keys():
-        ax.plot(xy_cords[ruta[i],0], xy_cords[ruta[i],1], label = i)
-        ax.legend(loc='best')
-
-    plt.show()
-
-
-################################################
-# Создать объект для вывода опт маршрута
-################################################
-def make_ruta(X_sol, departure_index):
-    arrival_index = 0
-    ruta = {}
-    first_routes_indexes = np.where(X_sol[:,0] == departure_index)[0]
-    for i in range(0, len(first_routes_indexes)):
-        tmp = X_sol[first_routes_indexes[i], 1]
-        ruta['Salesman_' + str(i+1)] = [departure_index, tmp]
-        while tmp!=arrival_index:
-            tmp = X_sol[np.where(X_sol[:,0] == tmp)[0][0],1]
-            ruta['Salesman_' + str(i+1)].append(tmp)
-    return ruta
-
-
-################################################
-# Вывести опт маршрут
-################################################
-def print_result(drones_amount, X_sol, destinations_count, coords, departure_index):
-    ruta = make_ruta(X_sol, departure_index)
-    plot_path(ruta, destinations_count, coords)
-    show_path(ruta)
+from utils import print_result
 
 ################################################
 # Задание ограничений
@@ -120,7 +64,7 @@ def solve(drones_amount, distance_matrix, destinations_count, coords, opt={}):
         print('X:\n', X.value)
         print('u:\n', u.value)
         print('X_sol:\n', X_sol)
-    print_result(drones_amount, X_sol, destinations_count, coords, departure_index)
+    print_result(X_sol, coords, departure_index)
     # Вывод длины оптимального маршрута
     optimal_distance = np.sum(np.multiply(distance_matrix, X.value))
     print(f'Длина оптимального маршрута: {np.round(optimal_distance, 2)}км')
