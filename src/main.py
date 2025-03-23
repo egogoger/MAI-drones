@@ -1,75 +1,49 @@
-import json
-import os
-import numpy as np
-from geopy import distance
+import argparse
+import sys
 
-from solver import find_optimal_amount_of_drones
+from solver import run_optimal_solver, run_single_solver
+from recalc_solver import run_recalc_solver
 
+def print_help():
+    help_text = """
+Usage: script.py <mode> --data <file_path> [--debug] [--random]
+
+Modes:
+  solve         Find paths for provided drones, coords, etc. Check data/example_solve.json for additional info
+  optimal       Find paths and optimal amount of drones for a given coords
+  recalc        Find paths for already dispatched drones
+
+Options:
+  --data    Path to the data file (required)
+  --debug   Enable debug output (optional)
+  --random  Uses random data for recalc mode (optional)
+  --help    Show this help message and exit
 """
-Reads, validates, and returns structured input data from a JSON file.
-
-Expected JSON structure:
-{
-    "coords": [[latitude, longitude], ...],
-    "debug": bool,
-    "departure_index": number
-}
-"""
-def read_and_validate_input_from_file(filepath):
-    def is_valid_coord(coord):
-        return (
-            isinstance(coord, list) and
-            len(coord) == 2 and
-            all(isinstance(c, (int, float)) for c in coord)
-        )
-
-    def is_valid_list_of_coords(lst):
-        return isinstance(lst, list) and all(is_valid_coord(item) for item in lst)
-
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"File not found: {filepath}")
-
-    with open(filepath, "r") as file:
-        try:
-            data = json.load(file)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON format: {e}")
-
-    required_keys = ["coords", "debug", "departure_index"]
-    for key in required_keys:
-        if key not in data:
-            raise ValueError(f"Missing required key: {key}")
-
-    if not is_valid_list_of_coords(data["coords"]):
-        raise ValueError("Invalid format for 'visits'. Expected list of [latitude, longitude].")
-
-    if not isinstance(data["debug"], bool):
-        raise ValueError("Invalid type for 'debug'. Expected boolean.")
-
-    if not isinstance(data["departure_index"], int):
-        raise ValueError("Invalid type for 'can_skip'. Expected integer.")
-
-    return data
-
+    print(help_text)
 
 def main():
-    data = read_and_validate_input_from_file("data/optimal.json")
-    coords = data["coords"]
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print_help()
+        sys.exit(0)
 
-    n = len(coords)
-    C = np.zeros((n,n))
+    parser = argparse.ArgumentParser(description="Run a mode with a data file and optional debug output.", add_help=False)
+    parser.add_argument("mode", choices=["solve", "optimal", "recalc"], help="Mode of operation")
+    parser.add_argument("--data", required=True, help="Path to the data file")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output")
+    parser.add_argument("--random", action="store_true", help="Uses random data for recalc mode")
 
-    for i in range(0, n):
-        for j in range(0, len(coords)):
-            C[i,j] = distance.distance(coords[i], coords[j]).km
+    args = parser.parse_args()
 
-    if data["debug"]:
-        print('Distance matrix:\n')
-        print(np.round(C,1))
+    mode_function_map = {
+        "solve": run_single_solver,
+        "optimal": run_optimal_solver,
+        "recalc": run_recalc_solver,
+    }
 
-    lowest_result, corresponding_i = find_optimal_amount_of_drones(C, n, coords,
-        {'debug': data["debug"], 'departure_index': data["departure_index"]})
-    print(f'\nOptimal drones amount: {corresponding_i} ({np.round(lowest_result, 2)})km.')
+    mode_func = mode_function_map.get(args.mode)
+    if args.debug:
+        print(f"[DEBUG] Running {args.mode}() with data={args.data} and random={args.random}")
+    mode_func(args.data, {'debug': args.debug, 'random': args.random})
 
 if __name__ == "__main__":
     main()

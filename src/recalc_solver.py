@@ -14,7 +14,6 @@ Expected JSON structure:
     "arrival": [latitude, longitude],
     "visits": [[latitude, longitude], ...],
     "departures": [[latitude, longitude], ...],
-    "debug": bool,
     "can_skip": bool
 }
 """
@@ -38,7 +37,7 @@ def read_and_validate_input_from_file(filepath):
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON format: {e}")
 
-    required_keys = ["arrival", "visits", "departures", "debug", "can_skip"]
+    required_keys = ["arrival", "visits", "departures", "can_skip"]
     for key in required_keys:
         if key not in data:
             raise ValueError(f"Missing required key: {key}")
@@ -51,9 +50,6 @@ def read_and_validate_input_from_file(filepath):
 
     if not is_valid_list_of_coords(data["departures"]):
         raise ValueError("Invalid format for 'departures'. Expected list of [latitude, longitude].")
-
-    if not isinstance(data["debug"], bool):
-        raise ValueError("Invalid type for 'debug'. Expected boolean.")
 
     if not isinstance(data["can_skip"], bool):
         raise ValueError("Invalid type for 'can_skip'. Expected boolean.")
@@ -152,8 +148,8 @@ def patch_X_sol(X_sol, patch):
             c[0] = match[1][0]
             c[1] = match[1][1]
 
-
-def solve2(arrival, visits, departures, opt={}):
+# This function only solves the task when drones have already departed
+def solve_recalc(arrival, visits, departures, opt={}):
     debug = opt.get('debug', False)
     all_coords = np.concatenate(([arrival], visits, departures), axis=0)
     distance_matrix = get_distance_matrix(all_coords)
@@ -178,20 +174,20 @@ def solve2(arrival, visits, departures, opt={}):
     return optimal_distance
 
 def main_random(visits_n, departures_n):
-    def run_solve2(coords, visits_n, departures_n):
+    def run_solve_recalc(coords, visits_n, departures_n):
         arrival = coords[0:1][0]
         visits = coords[1:1+visits_n]
         departures = coords[1+visits_n:1+visits_n+departures_n]
         print(visits)
         print(departures)
-        solve2(arrival, visits, departures, {'debug': False, 'can_skip': True})
-    run_solve2(generate_random_points(1+visits_n+departures_n), visits_n, departures_n)
-    del run_solve2
+        solve_recalc(arrival, visits, departures, {'debug': False, 'can_skip': True})
+    run_solve_recalc(generate_random_points(1+visits_n+departures_n), visits_n, departures_n)
+    del run_solve_recalc
 
-def main_from_file(filepath):
+def run_recalc_solver(filepath, opt={}):
     data = read_and_validate_input_from_file(filepath)
-    solve2(data["arrival"], data["visits"], data["departures"], {'debug': data["debug"], 'can_skip': data["can_skip"], 'patch': data["patch"]})
+    solve_recalc(data["arrival"], data["visits"], data["departures"], {'debug': opt.get("debug", False), 'can_skip': data["can_skip"], 'patch': data["patch"]})
 
 if __name__ == "__main__":
     # main_random(50, 10)
-    main_from_file("data/lost.json")
+    run_recalc_solver("data/lost.json")

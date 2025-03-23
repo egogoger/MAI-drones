@@ -33,6 +33,7 @@ def plot_path(ruta, coords):
         ax.plot(xy_cords[ruta[i],0], xy_cords[ruta[i],1], label = i)
         ax.legend(loc='best')
     
+    plt.axis('equal')
     plt.show()
 
 
