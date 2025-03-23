@@ -1,8 +1,64 @@
+import json
+import os
 import numpy as np
 import cvxpy as cp
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix, get_vars_and_obj, solve_problem
 from utils import print_result
+
+"""
+Reads, validates, and returns structured input data from a JSON file.
+
+Expected JSON structure:
+{
+    "arrival": [latitude, longitude],
+    "visits": [[latitude, longitude], ...],
+    "departures": [[latitude, longitude], ...],
+    "debug": bool,
+    "can_skip": bool
+}
+"""
+def read_and_validate_input_from_file(filepath):
+    def is_valid_coord(coord):
+        return (
+            isinstance(coord, list) and
+            len(coord) == 2 and
+            all(isinstance(c, (int, float)) for c in coord)
+        )
+
+    def is_valid_list_of_coords(lst):
+        return isinstance(lst, list) and all(is_valid_coord(item) for item in lst)
+
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"File not found: {filepath}")
+
+    with open(filepath, "r") as file:
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
+
+    required_keys = ["arrival", "visits", "departures", "debug", "can_skip"]
+    for key in required_keys:
+        if key not in data:
+            raise ValueError(f"Missing required key: {key}")
+
+    if not is_valid_coord(data["arrival"]):
+        raise ValueError("Invalid format for 'arrival'. Expected [latitude, longitude].")
+
+    if not is_valid_list_of_coords(data["visits"]):
+        raise ValueError("Invalid format for 'visits'. Expected list of [latitude, longitude].")
+
+    if not is_valid_list_of_coords(data["departures"]):
+        raise ValueError("Invalid format for 'departures'. Expected list of [latitude, longitude].")
+
+    if not isinstance(data["debug"], bool):
+        raise ValueError("Invalid type for 'debug'. Expected boolean.")
+
+    if not isinstance(data["can_skip"], bool):
+        raise ValueError("Invalid type for 'can_skip'. Expected boolean.")
+
+    return data
 
 def get_constraints2(X, u, arrival, visits, departures, all_coords, opt={}):
     can_skip = opt.get('can_skip', False)
@@ -87,12 +143,22 @@ def get_constraints2(X, u, arrival, visits, departures, all_coords, opt={}):
 
     return c
 
+def patch_X_sol(X_sol, patch):
+    if not patch or len(patch) == 0:
+        return
+    for c in X_sol:
+        match = next((cc for cc in patch if cc[0][0] == c[0] and cc[0][1] == c[1]), None)
+        if match:
+            c[0] = match[1][0]
+            c[1] = match[1][1]
+
+
 def solve2(arrival, visits, departures, opt={}):
     debug = opt.get('debug', False)
-    all_coords = np.concatenate((arrival, visits, departures), axis=0)
+    all_coords = np.concatenate(([arrival], visits, departures), axis=0)
     distance_matrix = get_distance_matrix(all_coords)
     if debug:
-        print('Матрица расстояний:\n', distance_matrix)
+        print('Distance matrix:\n', distance_matrix)
 
     X, u, objective = get_vars_and_obj(distance_matrix)
     constraints = get_constraints2(X, u, arrival, visits, departures, all_coords, opt)
@@ -103,6 +169,7 @@ def solve2(arrival, visits, departures, opt={}):
         print('u:\n', u.value)
         print('X_sol:\n', X_sol)
 
+    patch_X_sol(X_sol, opt.get('patch', []))
     departures_indexes = np.arange(1+len(visits), 1+len(visits)+len(departures))
     print_result(X_sol, all_coords, departures_indexes)
 
@@ -110,10 +177,21 @@ def solve2(arrival, visits, departures, opt={}):
     print(f'Длина оптимального маршрута: {np.round(optimal_distance, 2)}км')
     return optimal_distance
 
-def run_solve2(coords, visits_n, departures_n):
-    arrival = coords[0:1]
-    visits = coords[1:1+visits_n]
-    departures = coords[1+visits_n:1+visits_n+departures_n]
-    solve2(arrival, visits, departures, {'debug': False, 'can_skip': True})
-run_solve2(generate_random_points(60), 50, 10)
-del run_solve2
+def main_random(visits_n, departures_n):
+    def run_solve2(coords, visits_n, departures_n):
+        arrival = coords[0:1][0]
+        visits = coords[1:1+visits_n]
+        departures = coords[1+visits_n:1+visits_n+departures_n]
+        print(visits)
+        print(departures)
+        solve2(arrival, visits, departures, {'debug': False, 'can_skip': True})
+    run_solve2(generate_random_points(1+visits_n+departures_n), visits_n, departures_n)
+    del run_solve2
+
+def main_from_file(filepath):
+    data = read_and_validate_input_from_file(filepath)
+    solve2(data["arrival"], data["visits"], data["departures"], {'debug': data["debug"], 'can_skip': data["can_skip"], 'patch': data["patch"]})
+
+if __name__ == "__main__":
+    # main_random(50, 10)
+    main_from_file("data/lost.json")

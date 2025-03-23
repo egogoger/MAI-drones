@@ -5,7 +5,7 @@ from geopy import distance
 ################################################
 # Написать оптимальный маршрут
 ################################################
-def show_path(ruta):
+def print_path(ruta):
     for i in ruta.keys():
         print(i,' => '.join(map(str, ruta[i])))
 
@@ -32,6 +32,8 @@ def plot_path(ruta, coords):
     for i in ruta.keys():
         ax.plot(xy_cords[ruta[i],0], xy_cords[ruta[i],1], label = i)
         ax.legend(loc='best')
+    
+    plt.show()
 
 
 ################################################
@@ -44,10 +46,10 @@ def make_ruta(X_sol, departures_indexex):
     for i in range(0, len(first_routes_indexes)):
         first_route = X_sol[first_routes_indexes[i]]
         tmp = first_route[1]
-        ruta['Salesman_' + str(i+1)] = [first_route[0], tmp]
+        ruta['drone_' + str(i+1)] = [first_route[0], tmp]
         while tmp!=arrival_index:
             tmp = X_sol[np.where(X_sol[:,0] == tmp)[0][0],1]
-            ruta['Salesman_' + str(i+1)].append(tmp)
+            ruta['drone_' + str(i+1)].append(tmp)
     return ruta
 
 
@@ -57,4 +59,4 @@ def make_ruta(X_sol, departures_indexex):
 def print_result(X_sol, coords, departures_indexes):
     ruta = make_ruta(X_sol, departures_indexes)
     plot_path(ruta, coords)
-    show_path(ruta)
+    print_path(ruta)
