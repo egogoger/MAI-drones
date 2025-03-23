@@ -167,7 +167,7 @@ def solve_recalc(arrival, visits, departures, opt={}):
 
     patch_X_sol(X_sol, opt.get('patch', []))
     departures_indexes = np.arange(1+len(visits), 1+len(visits)+len(departures))
-    print_result(X_sol, all_coords, departures_indexes)
+    print_result(X_sol, all_coords, departures_indexes, distance_matrix)
 
     optimal_distance = np.sum(np.multiply(distance_matrix, X.value))
     print(f'Длина оптимального маршрута: {np.round(optimal_distance, 2)}км')

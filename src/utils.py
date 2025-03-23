@@ -7,7 +7,7 @@ from geopy import distance
 ################################################
 def print_path(ruta):
     for i in ruta.keys():
-        print(i,' => '.join(map(str, ruta[i])))
+        print(i,' => '.join(map(str, ruta[i]['path'])))
 
 ################################################
 # Нарисовать оптимальный маршрут
@@ -30,34 +30,39 @@ def plot_path(ruta, coords):
 
     ax.scatter(xy_cords[:,0],xy_cords[:,1])
     for i in ruta.keys():
-        ax.plot(xy_cords[ruta[i],0], xy_cords[ruta[i],1], label = i)
+        ax.plot(xy_cords[ruta[i]['path'],0], xy_cords[ruta[i]['path'],1], label = i)
         ax.legend(loc='best')
     
     plt.axis('equal')
     plt.show()
 
-
 ################################################
 # Создать объект для вывода опт маршрута
 ################################################
-def make_ruta(X_sol, departures_indexex):
+def make_ruta(X_sol, departures_indexex, distance_matrix):
     arrival_index = 0
     ruta = {}
     first_routes_indexes = np.where(np.isin(X_sol[:, 0], departures_indexex))[0]
     for i in range(0, len(first_routes_indexes)):
         first_route = X_sol[first_routes_indexes[i]]
         tmp = first_route[1]
-        ruta['drone_' + str(i+1)] = [first_route[0], tmp]
+        path = [first_route[0], tmp]
         while tmp!=arrival_index:
             tmp = X_sol[np.where(X_sol[:,0] == tmp)[0][0],1]
-            ruta['drone_' + str(i+1)].append(tmp)
+            path.append(tmp)
+        dist = 0
+        for j in range(len(path) - 1):
+            from_node = int(path[j])
+            to_node = int(path[j+1])
+            dist += distance_matrix[from_node][to_node]
+        ruta['drone_' + str(i+1)] = {'path': path, 'distance': dist}
     return ruta
-
 
 ################################################
 # Вывести опт маршрут
 ################################################
-def print_result(X_sol, coords, departures_indexes):
-    ruta = make_ruta(X_sol, departures_indexes)
+def print_result(X_sol, coords, departures_indexes, distance_matrix):
+    ruta = make_ruta(X_sol, departures_indexes, distance_matrix)
     plot_path(ruta, coords)
     print_path(ruta)
+    return ruta

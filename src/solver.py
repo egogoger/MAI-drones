@@ -7,24 +7,6 @@ from geopy import distance
 
 from utils import print_result
 
-def extract_routes(X_sol, departure_index, drones_n):
-
-    # Build graph
-    graph = defaultdict(list)
-    for i, j in X_sol:
-        graph[i].append(j)
-
-    routes = []
-    for _ in range(drones_n):
-        route = [departure_index]
-        current = departure_index
-        while graph[current]:
-            nxt = graph[current].pop()
-            route.append(nxt)
-            current = nxt
-        routes.append(route)
-    return routes
-
 ################################################
 # Задание ограничений
 ################################################
@@ -91,25 +73,11 @@ def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
         print('[DEBUG] X:\n', X.value)
         print('[DEBUG] u:\n', u.value)
         print('[DEBUG] X_sol:\n', X_sol)
-    print_result(X_sol, coords, departure_index)
+
     # Вывод длины оптимального маршрута
-    optimal_distance = np.sum(np.multiply(distance_matrix, X.value))
-    print(f'Длина оптимального маршрута: {np.round(optimal_distance, 2)}км')
+    ruta = print_result(X_sol, coords, departure_index, distance_matrix)
+    return ruta
 
-    # Calculate per-drone distances
-    drone_routes = extract_routes(X_sol, departure_index, drones_n)
-    drone_distances = []
-    for route in drone_routes:
-        dist = sum(distance_matrix[route[i], route[i+1]] for i in range(len(route) - 1))
-        drone_distances.append(dist)
-    
-    if debug:
-        print("[DEBUG] Drone distances", drone_distances)
-    return optimal_distance, drone_distances
-
-################################################
-# Решение задачи целочисленного программирования
-################################################
 def find_optimal_amount_of_drones(distance_matrix, destinations_n, coords, opt={}):
     lowest_result = float('inf')
     corresponding_i = -1
@@ -118,10 +86,11 @@ def find_optimal_amount_of_drones(distance_matrix, destinations_n, coords, opt={
     max_cycles = destinations_n if departure_index == arrival_index else destinations_n-1
 
     for i in range(1, max_cycles):
-        result, _ = solve(i, distance_matrix, destinations_n, coords, opt)
+        ruta = solve(i, distance_matrix, destinations_n, coords, opt)
+        max_distance = max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance']
 
-        if result < lowest_result:
-            lowest_result = result
+        if max_distance < lowest_result:
+            lowest_result = max_distance
             corresponding_i = i
 
     return lowest_result, corresponding_i
@@ -234,5 +203,5 @@ def run_single_solver(data_filepath, opt={}):
     for i in range(0, n):
         for j in range(0, len(coords)):
             C[i,j] = distance.distance(coords[i], coords[j]).km
-    result, _ = solve(data["drones_n"], C, n, coords, opt)
-    print(f'\nResult: ({np.round(result, 2)})km.')
+    ruta = solve(data["drones_n"], C, n, coords, opt)
+    print("Max drone distance", max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'])
