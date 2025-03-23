@@ -167,7 +167,8 @@ def run_optimal_solver(data_filepath, opt={}):
         coords = generate_random_points(get_optimal_random_solver_input(data_filepath)["coords_n"])
     else:
         coords = get_optimal_solver_input(data_filepath)["coords"]
-
+    if debug:
+        print("[DEBUG] Coords", coords)
     lowest_result, corresponding_i = find_optimal_amount_of_drones(coords, {'debug': debug})
     print(f'\nOptimal drones amount: {corresponding_i} ({np.round(lowest_result, 2)})km.')
 
@@ -214,8 +215,11 @@ def get_single_solver_input(filepath):
     return data
 
 def run_single_solver(data_filepath, opt={}):
+    debug = opt.get('debug', False)
     data = get_single_solver_input(data_filepath)
     coords = data["coords"]
+    if debug:
+        print("[DEBUG] Coords", coords)
     n = len(coords)
     C = np.zeros((n,n))
     for i in range(0, n):

@@ -45,5 +45,6 @@ def main():
         print(f"[DEBUG] Running {args.mode}() with data={args.data} and random={args.random}")
     mode_func(args.data, {'debug': args.debug, 'random': args.random})
 
+# TODO: add speed of drones
 if __name__ == "__main__":
     main()
