@@ -55,9 +55,7 @@ def read_and_validate_input_from_file(filepath):
 def main():
     data = read_and_validate_input_from_file("data/optimal.json")
     coords = data["coords"]
-    ################################################
-    # Строим матрицу расстояний
-    ################################################
+
     n = len(coords)
     C = np.zeros((n,n))
 
@@ -65,14 +63,13 @@ def main():
         for j in range(0, len(coords)):
             C[i,j] = distance.distance(coords[i], coords[j]).km
 
-    # Showing distance matrix
     if data["debug"]:
-        print('Матрица расстояний:\n')
+        print('Distance matrix:\n')
         print(np.round(C,1))
 
     lowest_result, corresponding_i = find_optimal_amount_of_drones(C, n, coords,
         {'debug': data["debug"], 'departure_index': data["departure_index"]})
-    print(f'\nОптимальное число дронов: {corresponding_i} ({np.round(lowest_result, 2)})км.')
+    print(f'\nOptimal drones amount: {corresponding_i} ({np.round(lowest_result, 2)})km.')
 
 if __name__ == "__main__":
     main()
