@@ -2,10 +2,10 @@ import json
 import os
 import numpy as np
 import cvxpy as cp
-from collections import defaultdict
 from geopy import distance
 
-from utils import print_result
+from solver_utils import generate_random_points, get_distance_matrix
+from utils import evaluate_paths, print_result
 
 ################################################
 # Задание ограничений
@@ -78,21 +78,26 @@ def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
     ruta = print_result(X_sol, coords, departure_index, distance_matrix)
     return ruta
 
-def find_optimal_amount_of_drones(distance_matrix, destinations_n, coords, opt={}):
+def find_optimal_amount_of_drones(coords, opt={}):
+    destinations_n = len(coords)
+    distance_matrix = get_distance_matrix(coords)
     lowest_result = float('inf')
     corresponding_i = -1
     departure_index = 0
     arrival_index = 0
     max_cycles = destinations_n if departure_index == arrival_index else destinations_n-1
+    rutas = []
 
     for i in range(1, max_cycles):
         ruta = solve(i, distance_matrix, destinations_n, coords, opt)
+        rutas.append(ruta)
         max_distance = max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance']
 
         if max_distance < lowest_result:
             lowest_result = max_distance
             corresponding_i = i
 
+    evaluate_paths(rutas)
     return lowest_result, corresponding_i
 
 """
@@ -134,23 +139,36 @@ def get_optimal_solver_input(filepath):
 
     return data
 
+def get_optimal_random_solver_input(filepath):
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"File not found: {filepath}")
+
+    with open(filepath, "r") as file:
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
+
+    required_keys = ["coords_n"]
+    for key in required_keys:
+        if key not in data:
+            raise ValueError(f"Missing required key: {key}")
+
+    if not isinstance(data["coords_n"], int):
+        raise ValueError("Invalid type for 'coords_n'. Expected integer.")
+
+    return data
+
 def run_optimal_solver(data_filepath, opt={}):
     debug = opt.get('debug', False)
-    data = get_optimal_solver_input(data_filepath)
-    coords = data["coords"]
+    random = opt.get('random', False)
+    coords = []
+    if random:
+        coords = generate_random_points(get_optimal_random_solver_input(data_filepath)["coords_n"])
+    else:
+        coords = get_optimal_solver_input(data_filepath)["coords"]
 
-    n = len(coords)
-    C = np.zeros((n,n))
-
-    for i in range(0, n):
-        for j in range(0, len(coords)):
-            C[i,j] = distance.distance(coords[i], coords[j]).km
-
-    if debug:
-        print('[DEBUG] Distance matrix:\n')
-        print(np.round(C,1))
-
-    lowest_result, corresponding_i = find_optimal_amount_of_drones(C, n, coords, {'debug': debug})
+    lowest_result, corresponding_i = find_optimal_amount_of_drones(coords, {'debug': debug})
     print(f'\nOptimal drones amount: {corresponding_i} ({np.round(lowest_result, 2)})km.')
 
 """

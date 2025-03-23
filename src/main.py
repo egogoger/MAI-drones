@@ -16,7 +16,7 @@ Modes:
 Options:
   --data    Path to the data file (required)
   --debug   Enable debug output (optional)
-  --random  Uses random data for recalc mode (optional)
+  --random  Uses random data (optional)
   --help    Show this help message and exit
 """
     print(help_text)

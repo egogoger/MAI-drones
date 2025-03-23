@@ -40,6 +40,7 @@ def plot_path(ruta, coords):
 # Создать объект для вывода опт маршрута
 ################################################
 def make_ruta(X_sol, departures_indexex, distance_matrix):
+    print(X_sol)
     arrival_index = 0
     ruta = {}
     first_routes_indexes = np.where(np.isin(X_sol[:, 0], departures_indexex))[0]
@@ -66,3 +67,40 @@ def print_result(X_sol, coords, departures_indexes, distance_matrix):
     plot_path(ruta, coords)
     print_path(ruta)
     return ruta
+
+"""
+Plots total distance vs max operational time for different drone data scenarios.
+
+Parameters:
+- all_drone_data: List of dicts, where each dict represents a drone_data for a given scenario.
+                    Format: {'drone_1': {'distance': float, 'path': [...]}, ...}
+"""
+def evaluate_paths(rutas):
+    total_distances = []
+    max_operational_times = []
+    drone_counts = []
+
+    for scenario in rutas:
+        distances = [float(drone['distance']) for drone in scenario.values()]
+        total_distance = sum(distances)
+        max_time = max(distances)
+        num_drones = len(scenario)
+
+        total_distances.append(total_distance)
+        max_operational_times.append(max_time)
+        drone_counts.append(num_drones)
+
+    # Plotting
+    plt.figure(figsize=(8, 6))
+    scatter = plt.scatter(total_distances, max_operational_times, c=drone_counts, cmap='viridis', s=100)
+
+    for i, count in enumerate(drone_counts):
+        plt.annotate(f'{count} D', (total_distances[i], max_operational_times[i]), textcoords="offset points", xytext=(0,5), ha='center')
+
+    plt.colorbar(scatter, label='Number of Drones')
+    plt.xlabel('Total Distance Flown [km]')
+    plt.ylabel('Max Operational Time [min]')
+    plt.title('Drone Deployment Trade-off: Distance vs Time')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
