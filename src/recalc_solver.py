@@ -136,14 +136,6 @@ def get_constraints2(X, u, visits_n, departures_n, coords_n, opt={}):
 
     return c
 
-def patch_X_sol(X_sol, patch):
-    if not patch or len(patch) == 0:
-        return
-    for c in X_sol:
-        match = next((cc for cc in patch if cc[0][0] == c[0] and cc[0][1] == c[1]), None)
-        if match:
-            c[0] = match[1][0]
-            c[1] = match[1][1]
 
 # This function only solves the task when drones have already departed
 def solve_recalc(arrival, visits, departures, opt={}):
@@ -162,7 +154,6 @@ def solve_recalc(arrival, visits, departures, opt={}):
         print('u:\n', u.value)
         print('X_sol:\n', X_sol)
 
-    patch_X_sol(X_sol, opt.get('patch', []))
     departures_indexes = np.arange(1+len(visits), 1+len(visits)+len(departures))
     print_result(X_sol, all_coords, departures_indexes, distance_matrix)
 

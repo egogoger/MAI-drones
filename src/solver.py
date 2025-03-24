@@ -7,13 +7,10 @@ from solver_utils import create_index_matrix, generate_random_points, get_distan
 from utils import evaluate_paths, print_result
 from constants import MAX_DRONES_N
 
-################################################
-# Задание ограничений
-################################################
-def get_constraints(X, u, drones_n, destinations_n, coords_n, opt={}):
+def get_constraints(X, u, drones_n, coords_n, opt={}):
     debug = opt.get('debug', False)
 
-    ones = np.ones((destinations_n, 1))
+    ones = np.ones((coords_n, 1))
     c = []
     arrival_i = 0
     departure_i = 0
@@ -67,10 +64,10 @@ def get_constraints(X, u, drones_n, destinations_n, coords_n, opt={}):
             c += [u[point_index] <= coords_n]
 
     # (9) Порядок посещения точек
-    for i in range(1, destinations_n):
-        for j in range(1, destinations_n):
+    for i in range(1, coords_n):
+        for j in range(1, coords_n):
             if i != j:
-                c += [ u[i] - u[j] + 1  <= (destinations_n - 1) * (1 - X[i, j]) ]
+                c += [ u[i] - u[j] + 1  <= (coords_n - 1) * (1 - X[i, j]) ]
 
     return c
 
@@ -80,10 +77,9 @@ def get_constraints(X, u, drones_n, destinations_n, coords_n, opt={}):
 def solve(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
     departure_i = 0
-    destinations_n = len(coords)
     print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
     X, u, objective = get_vars_and_obj(distance_matrix)
-    constraints = get_constraints(X, u, drones_n, destinations_n, len(coords), opt)
+    constraints = get_constraints(X, u, drones_n, len(coords), opt)
     X_sol = solve_problem(objective, constraints, X)
 
     if debug:
@@ -281,8 +277,9 @@ def run_single_solver(data_filepath, opt={}):
         input = get_single_solver_input(data_filepath)
         coords = input["coords"]
         drones_n = input["drones_n"]
+    distance_matrix = get_distance_matrix(coords)
     if debug:
         print("[DEBUG] Coords", coords)
-    distance_matrix = get_distance_matrix(coords)
+        print("[DEBUG] Distance matrix", distance_matrix)
     ruta = solve(drones_n, distance_matrix, coords, opt)
     print("Max drone distance", max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'])

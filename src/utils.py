@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from geopy import distance
+import folium
 
 ################################################
 # Написать оптимальный маршрут
@@ -9,32 +10,38 @@ def print_path(ruta):
     for i in ruta.keys():
         print(i,' => '.join(map(str, ruta[i]['path'])))
 
-################################################
-# Нарисовать оптимальный маршрут
-################################################
-def plot_path(ruta, coords):
-    n = len(coords)
 
-    # Transforming the coords to the xy plane approximately
-    xy_cords = np.zeros((n, 2))
+def plot_drone_routes(ruta, coords, output_file='drone_routes.html'):
+    # Initialize map centered at the first coordinate
+    m = folium.Map(location=coords[0], zoom_start=11)
 
-    for i in range(0, n):
-        xy_cords[i,0] = distance.distance((coords[0][1],0), (coords[i][1],0)).km
-        xy_cords[i,1] = distance.distance((0,coords[0][0]), (0,coords[i][0])).km
+    colors = ['blue', 'green', 'red', 'purple', 'orange', 'darkred', 'cadetblue']
+    color_cycle = iter(colors)
 
-    # Plotting the coords
-    fig, ax = plt.subplots(figsize=(17,13))
+    for i, (drone_id, info) in enumerate(ruta.items()):
+        path_indices = info['path']
+        path_coords = [coords[i] for i in path_indices]
+        color = next(color_cycle, 'gray')  # fallback to gray if colors run out
 
-    for i in range(n):
-        ax.annotate(str(i), xy=(xy_cords[i,0], xy_cords[i,1]+0.1))
+        # Add a polyline for this drone
+        folium.PolyLine(path_coords, color=color, weight=2.5, opacity=1, popup=f"{drone_id} route").add_to(m)
 
-    ax.scatter(xy_cords[:,0],xy_cords[:,1])
-    for i in ruta.keys():
-        ax.plot(xy_cords[ruta[i]['path'],0], xy_cords[ruta[i]['path'],1], label = i)
-        ax.legend(loc='best')
-    
-    plt.axis('equal')
-    plt.show()
+        # Add markers
+        for step, coord in enumerate(path_coords):
+            marker_popup = f"{drone_id} - Step {step}<br>Coord Index: {path_indices[step]}"
+            if 'distance' in info and step == 0:
+                marker_popup += f"<br>Total Distance: {info['distance']:.2f}"
+
+            folium.Marker(
+                location=coord,
+                popup=marker_popup,
+                icon=folium.Icon(color='red' if step == 0 else color)
+            ).add_to(m)
+
+    # Save and return the map
+    m.save(output_file)
+    return m
+
 
 ################################################
 # Создать объект для вывода опт маршрута
@@ -63,8 +70,8 @@ def make_ruta(X_sol, departures_indexex, distance_matrix):
 ################################################
 def print_result(X_sol, coords, departures_indexes, distance_matrix):
     ruta = make_ruta(X_sol, departures_indexes, distance_matrix)
-    plot_path(ruta, coords)
     print_path(ruta)
+    plot_drone_routes(ruta, coords)
     return ruta
 
 """
