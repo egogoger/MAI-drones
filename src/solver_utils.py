@@ -1,7 +1,8 @@
+import time
 import numpy as np
-import matplotlib.pyplot as plt
 import cvxpy as cp
 from geopy import distance
+
 
 def get_distance_matrix(coords):
     n = len(coords)
@@ -23,7 +24,12 @@ def get_vars_and_obj(distance_matrix):
 
 def solve_problem(objective, constraints, X):
     prob = cp.Problem(objective, constraints)
+
+    start = time.time()
     prob.solve(verbose=False)
+    end = time.time()
+
+    print("Total solve time:", round(end - start, 3), "seconds")
 
     if X.value is None:
         raise RuntimeError('Невозможно найти решение')
