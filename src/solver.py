@@ -1,81 +1,107 @@
 import json
 import os
+import math
 import numpy as np
 import cvxpy as cp
 from geopy import distance
 
-from solver_utils import generate_random_points, get_distance_matrix
+from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix
 from utils import evaluate_paths, print_result
 
 ################################################
 # Задание ограничений
 ################################################
-def get_constraints(X, u, drones_n, destinations_n, coords_n, departure_index=0):
-    ones = np.ones((destinations_n, 1))
-    constraints = []
-    arrival_index = 0
+def get_constraints(X, u, drones_n, destinations_n, coords_n, opt={}):
+    debug = opt.get('debug', False)
 
-    # (1) Из строки departure_index должно выйти drones_n дронов
+    ones = np.ones((destinations_n, 1))
+    c = []
+    arrival_i = 0
+    departure_i = 0
+    index_matrix = create_index_matrix(coords_n)
+
+    if debug:
+        print('Debugging constraints on index matrix:\n', index_matrix)
+
+    # (1) Из строки departure_i должно выйти drones_n дронов
     # Сумма по строке отправления равна количеству дронов
-    constraints += [X[departure_index,:] @ ones == drones_n]
+    c += [X[departure_i,:] @ ones == drones_n]
+    if debug:
+        print('(1) Sum of row departure_i == drones_n:\n',
+              index_matrix[departure_i,:])
     
     # (2) В точку возвращения должно вернуться drones_n дронов
     # Сумма по столбцу прибытия равна количеству дронов
-    constraints += [X[:,arrival_index] @ ones == drones_n]
+    c += [X[:,arrival_i] @ ones == drones_n]
+    if debug:
+        print('(1) Sum of row arrival_i == drones_n:\n',
+              index_matrix[:,arrival_i])
 
-    # В каждую точку (кроме 0) будет только один вход и только один выход
-    if departure_index == 0:
-        constraints += [X[1:,:] @ ones == 1]
-        constraints += [X[:,1:].T @ ones == 1]
+    # (3) В каждую точку (кроме 0) будет только один вход и только один выход
+    c += [X[1:,:] @ ones == 1]
+    c += [X[:,1:].T @ ones == 1]
+    if debug:
+        print(f'(3) Each string only contains one 1:\n',
+              index_matrix[1:,:])
+        print(f'(3) Each string only contains one 1:\n',
+              index_matrix[:,1:].T)
 
-    if departure_index == destinations_n-1:
-        constraints += [X[1:departure_index,:] @ ones == 1]
-        constraints += [X[:,1:departure_index].T @ ones == 1]
+    # (?)
+    if departure_i != arrival_i:
+        c += [X[departure_i, arrival_i] == 0]
+        if debug:
+            print(f'(?) dunno but sum == 0:\n',
+                index_matrix[departure_i, arrival_i])
 
-    if departure_index != arrival_index:
-        constraints += [X[departure_index, arrival_index] == 0]
+    # (4) Нет пути из точки в саму себя
+    c += [cp.diag(X) == 0]
+    if debug:
+        print('(4) Each cell == 0:\n', np.diag(index_matrix))
 
-    constraints += [cp.diag(X) == 0]                  # Точка не связана сама с собой
-    constraints += [u[departure_index] == 1]          # Точка отправления посещается первой
+    # (7) Точка отправления посещаются первыми
+    c += [u[departure_i] == 1]
 
+    # (8) Каждая другая точка посещается один раз
     for point_index in range(coords_n):
-        if point_index != departure_index:
-            constraints += [u[point_index] >= 2]      # Каждая другая точка посещается один раз
-            constraints += [u[point_index] <= coords_n]
+        if point_index != departure_i:
+            c += [u[point_index] >= 2]
+            c += [u[point_index] <= coords_n]
 
+    # (9) Порядок посещения точек
     for i in range(1, destinations_n):
         for j in range(1, destinations_n):
             if i != j:
-                constraints += [ u[i] - u[j] + 1  <= (destinations_n - 1) * (1 - X[i, j]) ]
-    return constraints
+                c += [ u[i] - u[j] + 1  <= (destinations_n - 1) * (1 - X[i, j]) ]
+
+    return c
 
 ################################################
 # Решение задачи целочисленного программирования
 ################################################
 def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
     debug = opt.get('debug', False)
-    departure_index = 0
+    departure_i = 0
     print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
     # Определения переменных                                                    https://www.cvxpy.org/tutorial/intro/index.html#vectors-and-matrices
     X = cp.Variable(distance_matrix.shape, boolean=True)                        # Булевая матрица, где 1 означает наличие маршрута между точками i и j
     u = cp.Variable(destinations_n, integer=True)
     # Определение целевой функции
     objective = cp.Minimize(cp.sum(cp.multiply(distance_matrix, X)))
-    constraints = get_constraints(X, u, drones_n, destinations_n, len(coords), departure_index)
+    constraints = get_constraints(X, u, drones_n, destinations_n, len(coords), opt)
     # Решение задачи
     prob = cp.Problem(objective, constraints)
     prob.solve(verbose=False)
     if X.value is None:
         raise RuntimeError('Невозможно найти решение')
     # Преобразование решения в маршруты
-    X_sol = np.argwhere(X.value==1)
+    X_sol = np.argwhere(np.isclose(X.value, 1.0, atol=1e-4))
     if debug:
         print('[DEBUG] X:\n', X.value)
         print('[DEBUG] u:\n', u.value)
         print('[DEBUG] X_sol:\n', X_sol)
 
     # Вывод длины оптимального маршрута
-    ruta = print_result(X_sol, coords, departure_index, distance_matrix)
+    ruta = print_result(X_sol, coords, departure_i, distance_matrix)
     return ruta
 
 def find_optimal_amount_of_drones(coords, opt={}):
@@ -83,9 +109,9 @@ def find_optimal_amount_of_drones(coords, opt={}):
     distance_matrix = get_distance_matrix(coords)
     lowest_result = float('inf')
     corresponding_i = -1
-    departure_index = 0
-    arrival_index = 0
-    max_cycles = destinations_n if departure_index == arrival_index else destinations_n-1
+    departure_i = 0
+    arrival_i = 0
+    max_cycles = destinations_n if departure_i == arrival_i else destinations_n-1
     rutas = []
 
     for i in range(1, max_cycles):

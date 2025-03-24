@@ -56,18 +56,15 @@ def read_and_validate_input_from_file(filepath):
 
     return data
 
-def get_constraints2(X, u, arrival, visits, departures, all_coords, opt={}):
+def get_constraints2(X, u, visits_n, departures_n, coords_n, opt={}):
     can_skip = opt.get('can_skip', False)
     debug = opt.get('debug', False)
 
     c = []
-    n = len(all_coords)
-    ones = np.ones((n, 1))
-    visits_n = len(visits)
+    ones = np.ones((coords_n, 1))
     arrival_i = 0
-    departures_n = len(departures)
-    departures_1_i = n-departures_n   # Индекс первой точки отправления
-    index_matrix = create_index_matrix(n)
+    departures_1_i = coords_n-departures_n   # Индекс первой точки отправления
+    index_matrix = create_index_matrix(coords_n)
 
     if debug:
         print('Дебажим constraints на матрице индексов:\n', index_matrix)
@@ -157,7 +154,7 @@ def solve_recalc(arrival, visits, departures, opt={}):
         print('Distance matrix:\n', distance_matrix)
 
     X, u, objective = get_vars_and_obj(distance_matrix)
-    constraints = get_constraints2(X, u, arrival, visits, departures, all_coords, opt)
+    constraints = get_constraints2(X, u, len(visits), len(departures), len(all_coords), opt)
     X_sol = solve_problem(objective, constraints, X)
 
     if debug:

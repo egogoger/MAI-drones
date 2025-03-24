@@ -29,7 +29,7 @@ def solve_problem(objective, constraints, X):
         raise RuntimeError('Невозможно найти решение')
 
     # Преобразование решения в маршруты
-    return np.argwhere(X.value==1)
+    return np.argwhere(np.isclose(X.value, 1.0, atol=1e-4))
 
 def create_index_matrix(n):
     return np.array([[f"{i},{j}" for j in range(n)] for i in range(n)])
