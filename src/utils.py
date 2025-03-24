@@ -90,17 +90,16 @@ def evaluate_paths(rutas):
         max_operational_times.append(max_time)
         drone_counts.append(num_drones)
 
-    # Plotting
-    plt.figure(figsize=(8, 6))
-    scatter = plt.scatter(total_operational_times, max_operational_times, c=drone_counts, cmap='viridis', s=100)
+    fig, ax = plt.subplots()
+    ax.scatter(total_operational_times, max_operational_times, c=drone_counts, cmap='viridis', s=100)
 
     for i, count in enumerate(drone_counts):
-        plt.annotate(f'{count} D', (total_operational_times[i], max_operational_times[i]), textcoords="offset points", xytext=(0,5), ha='center')
+        ax.annotate(f'{count} D', (total_operational_times[i], max_operational_times[i]), textcoords="offset points", xytext=(0,5), ha='center')
 
-    plt.colorbar(scatter, label='Number of Drones')
-    plt.xlabel('Total Fleet Distance [min]')
-    plt.ylabel('Max Operational Time [min]')
-    plt.title('Drone Deployment Trade-off: Distance vs Time')
-    plt.grid(True)
-    plt.tight_layout()
+    ax.set_xlabel('Total Fleet Distance [min]')
+    ax.set_ylabel('Max Operational Time [min]')
+    ax.set_title('Drone Deployment Trade-off: Distance vs Time')
+    ax.grid(True)
+    ax.set_aspect('equal', adjustable='box')
+    ax.set_ylim(bottom=0)
     plt.show()
