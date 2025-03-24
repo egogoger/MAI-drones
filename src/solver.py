@@ -1,9 +1,7 @@
 import json
 import os
-import math
 import numpy as np
 import cvxpy as cp
-from geopy import distance
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix
 from utils import evaluate_paths, print_result
@@ -247,16 +245,53 @@ def get_single_solver_input(filepath):
 
     return data
 
+"""
+Reads, validates, and returns structured input data from a JSON file.
+
+Expected JSON structure:
+{
+    "coords_n": number,
+    "drones_n": number
+}
+"""
+def get_single_random_solver_input(filepath):
+    if not os.path.exists(filepath):
+        raise FileNotFoundError(f"File not found: {filepath}")
+
+    with open(filepath, "r") as file:
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON format: {e}")
+
+    required_keys = ["coords_n", "drones_n"]
+    for key in required_keys:
+        if key not in data:
+            raise ValueError(f"Missing required key: {key}")
+
+    if not isinstance(data["coords_n"], int):
+        raise ValueError("Invalid type for 'coords_n'. Expected integer.")
+
+    if not isinstance(data["drones_n"], int):
+        raise ValueError("Invalid type for 'drones_n'. Expected integer.")
+
+    return data
+
 def run_single_solver(data_filepath, opt={}):
     debug = opt.get('debug', False)
-    data = get_single_solver_input(data_filepath)
-    coords = data["coords"]
+    random = opt.get('random', False)
+    coords = []
+    drones_n = 0
+    if random:
+        input = get_single_random_solver_input(data_filepath)
+        coords = generate_random_points(input["coords_n"])
+        drones_n = input["drones_n"]
+    else:
+        input = get_single_solver_input(data_filepath)
+        coords = input["coords"]
+        drones_n = input["drones_n"]
     if debug:
         print("[DEBUG] Coords", coords)
-    n = len(coords)
-    C = np.zeros((n,n))
-    for i in range(0, n):
-        for j in range(0, len(coords)):
-            C[i,j] = distance.distance(coords[i], coords[j]).km
-    ruta = solve(data["drones_n"], C, n, coords, opt)
+    distance_matrix = get_distance_matrix(coords)
+    ruta = solve(drones_n, distance_matrix, len(coords), coords, opt)
     print("Max drone distance", max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'])

@@ -63,7 +63,7 @@ def make_ruta(X_sol, departures_indexex, distance_matrix):
 ################################################
 def print_result(X_sol, coords, departures_indexes, distance_matrix):
     ruta = make_ruta(X_sol, departures_indexes, distance_matrix)
-    # plot_path(ruta, coords)
+    plot_path(ruta, coords)
     print_path(ruta)
     return ruta
 
