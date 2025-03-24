@@ -3,7 +3,7 @@ import os
 import numpy as np
 import cvxpy as cp
 
-from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix
+from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix, get_vars_and_obj, solve_problem
 from utils import evaluate_paths, print_result
 from constants import MAX_DRONES_N
 
@@ -77,23 +77,15 @@ def get_constraints(X, u, drones_n, destinations_n, coords_n, opt={}):
 ################################################
 # Решение задачи целочисленного программирования
 ################################################
-def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
+def solve(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
     departure_i = 0
+    destinations_n = len(coords)
     print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
-    # Определения переменных                                                    https://www.cvxpy.org/tutorial/intro/index.html#vectors-and-matrices
-    X = cp.Variable(distance_matrix.shape, boolean=True)                        # Булевая матрица, где 1 означает наличие маршрута между точками i и j
-    u = cp.Variable(destinations_n, integer=True)
-    # Определение целевой функции
-    objective = cp.Minimize(cp.sum(cp.multiply(distance_matrix, X)))
+    X, u, objective = get_vars_and_obj(distance_matrix)
     constraints = get_constraints(X, u, drones_n, destinations_n, len(coords), opt)
-    # Решение задачи
-    prob = cp.Problem(objective, constraints)
-    prob.solve(verbose=False)
-    if X.value is None:
-        raise RuntimeError('Невозможно найти решение')
-    # Преобразование решения в маршруты
-    X_sol = np.argwhere(np.isclose(X.value, 1.0, atol=1e-4))
+    X_sol = solve_problem(objective, constraints, X)
+
     if debug:
         print('[DEBUG] X:\n', X.value)
         print('[DEBUG] u:\n', u.value)
@@ -104,7 +96,6 @@ def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
     return ruta
 
 def find_optimal_amount_of_drones(coords, max_drones_n, opt={}):
-    destinations_n = len(coords)
     distance_matrix = get_distance_matrix(coords)
     lowest_result = float('inf')
     corresponding_i = -1
@@ -112,7 +103,7 @@ def find_optimal_amount_of_drones(coords, max_drones_n, opt={}):
     rutas = []
 
     for i in range(1, max_cycles):
-        ruta = solve(i, distance_matrix, destinations_n, coords, opt)
+        ruta = solve(i, distance_matrix, coords, opt)
         rutas.append(ruta)
         max_distance = max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance']
 
@@ -293,5 +284,5 @@ def run_single_solver(data_filepath, opt={}):
     if debug:
         print("[DEBUG] Coords", coords)
     distance_matrix = get_distance_matrix(coords)
-    ruta = solve(drones_n, distance_matrix, len(coords), coords, opt)
+    ruta = solve(drones_n, distance_matrix, coords, opt)
     print("Max drone distance", max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'])
