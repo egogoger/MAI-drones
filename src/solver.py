@@ -7,6 +7,7 @@ from geopy import distance
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix
 from utils import evaluate_paths, print_result
+from constants import MAX_DRONES_N
 
 ################################################
 # Задание ограничений
@@ -104,14 +105,12 @@ def solve(drones_n, distance_matrix, destinations_n, coords, opt={}):
     ruta = print_result(X_sol, coords, departure_i, distance_matrix)
     return ruta
 
-def find_optimal_amount_of_drones(coords, opt={}):
+def find_optimal_amount_of_drones(coords, max_drones_n, opt={}):
     destinations_n = len(coords)
     distance_matrix = get_distance_matrix(coords)
     lowest_result = float('inf')
     corresponding_i = -1
-    departure_i = 0
-    arrival_i = 0
-    max_cycles = destinations_n if departure_i == arrival_i else destinations_n-1
+    max_cycles = max_drones_n
     rutas = []
 
     for i in range(1, max_cycles):
@@ -163,6 +162,9 @@ def get_optimal_solver_input(filepath):
     if not is_valid_list_of_coords(data["coords"]):
         raise ValueError("Invalid format for 'visits'. Expected list of [latitude, longitude].")
 
+    if "max_drones_n" in data and not isinstance(data["max_drones_n"], int):
+        raise ValueError("Invalid type for 'max_drones_n'. Expected integer.")
+
     return data
 
 def get_optimal_random_solver_input(filepath):
@@ -189,13 +191,18 @@ def run_optimal_solver(data_filepath, opt={}):
     debug = opt.get('debug', False)
     random = opt.get('random', False)
     coords = []
+    max_drones_n = 0
     if random:
-        coords = generate_random_points(get_optimal_random_solver_input(data_filepath)["coords_n"])
+        input = get_optimal_random_solver_input(data_filepath)
+        coords = generate_random_points(input["coords_n"])
+        max_drones_n = input.get('max_drones_n', max(input["coords_n"], MAX_DRONES_N))
     else:
-        coords = get_optimal_solver_input(data_filepath)["coords"]
+        input = get_optimal_solver_input(data_filepath)
+        coords = input["coords"]
+        max_drones_n = input.get('max_drones_n', max(len(coords), MAX_DRONES_N))
     if debug:
         print("[DEBUG] Coords", coords)
-    lowest_result, corresponding_i = find_optimal_amount_of_drones(coords, {'debug': debug})
+    lowest_result, corresponding_i = find_optimal_amount_of_drones(coords, max_drones_n, {'debug': debug})
     print(f'\nOptimal drones amount: {corresponding_i} ({np.round(lowest_result, 2)})km.')
 
 """

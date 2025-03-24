@@ -1,3 +1,4 @@
 {
-    "coords_n": 10
+    "coords_n": 20,
+    "max_drones": 10
 }
