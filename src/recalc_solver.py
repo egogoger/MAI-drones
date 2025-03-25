@@ -4,7 +4,7 @@ import numpy as np
 import cvxpy as cp
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix, get_vars_and_obj, solve_problem
-from utils import print_result
+from utils import print_result, write_stats
 
 """
 Reads, validates, and returns structured input data from a JSON file.
@@ -147,12 +147,14 @@ def solve_recalc(arrival, visits, departures, opt={}):
 
     X, u, objective = get_vars_and_obj(distance_matrix)
     constraints = get_constraints2(X, u, len(visits), len(departures), len(all_coords), opt)
-    X_sol = solve_problem(objective, constraints, X)
+    X_sol, elapsed = solve_problem(objective, constraints, X)
 
     if debug:
         print('X:\n', X.value)
         print('u:\n', u.value)
         print('X_sol:\n', X_sol)
+
+    write_stats('recalc', drones_n, len(distance_matrix)-1, elapsed)
 
     departures_indexes = np.arange(1+len(visits), 1+len(visits)+len(departures))
     print_result(X_sol, all_coords, departures_indexes, distance_matrix)
@@ -174,7 +176,7 @@ def main_random(visits_n, departures_n):
 
 def run_recalc_solver(filepath, opt={}):
     data = read_and_validate_input_from_file(filepath)
-    solve_recalc(data["arrival"], data["visits"], data["departures"], {'debug': opt.get("debug", False), 'can_skip': data["can_skip"], 'patch': data["patch"]})
+    solve_recalc(data["arrival"], data["visits"], data["departures"], {'debug': opt.get("debug", False), 'can_skip': data["can_skip"]})
 
 if __name__ == "__main__":
     # main_random(50, 10)

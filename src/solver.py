@@ -4,7 +4,7 @@ import numpy as np
 import cvxpy as cp
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix, get_vars_and_obj, solve_problem
-from utils import evaluate_paths, print_result
+from utils import evaluate_paths, print_result, write_stats
 from constants import MAX_DRONES_N
 
 def get_constraints(X, u, drones_n, coords_n, opt={}):
@@ -80,12 +80,14 @@ def solve(drones_n, distance_matrix, coords, opt={}):
     print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
     X, u, objective = get_vars_and_obj(distance_matrix)
     constraints = get_constraints(X, u, drones_n, len(coords), opt)
-    X_sol = solve_problem(objective, constraints, X)
+    X_sol, elapsed = solve_problem(objective, constraints, X)
 
     if debug:
         print('[DEBUG] X:\n', X.value)
         print('[DEBUG] u:\n', u.value)
         print('[DEBUG] X_sol:\n', X_sol)
+
+    write_stats('solve', drones_n, len(distance_matrix)-1, elapsed)
 
     # Вывод длины оптимального маршрута
     ruta = print_result(X_sol, coords, departure_i, distance_matrix)

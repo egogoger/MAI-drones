@@ -28,14 +28,15 @@ def solve_problem(objective, constraints, X):
     start = time.time()
     prob.solve(verbose=False)
     end = time.time()
+    elapsed = round(end-start, 3)
 
-    print("Total solve time:", round(end - start, 3), "seconds")
+    print("Total solve time:", elapsed, "seconds")
 
     if X.value is None:
         raise RuntimeError('Невозможно найти решение')
 
     # Преобразование решения в маршруты
-    return np.argwhere(np.isclose(X.value, 1.0, atol=1e-4))
+    return np.argwhere(np.isclose(X.value, 1.0, atol=1e-4)), elapsed
 
 def create_index_matrix(n):
     return np.array([[f"{i},{j}" for j in range(n)] for i in range(n)])

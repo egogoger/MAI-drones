@@ -1,3 +1,5 @@
+import os
+import platform
 import numpy as np
 import matplotlib.pyplot as plt
 from geopy import distance
@@ -110,3 +112,7 @@ def evaluate_paths(rutas):
     ax.set_aspect('equal', adjustable='box')
     ax.set_ylim(bottom=0)
     plt.show()
+
+def write_stats(mode, drones_n, visits_n, seconds):
+    with open('stats.csv', 'a') as file:
+        file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}\n')
