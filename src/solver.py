@@ -284,4 +284,4 @@ def run_single_solver(data_filepath, opt={}):
         print("[DEBUG] Coords", coords)
         print("[DEBUG] Distance matrix", distance_matrix)
     ruta = solve(drones_n, distance_matrix, coords, opt)
-    print("Max drone distance", max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'])
+    print("Max drone distance", round(max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'], 3))

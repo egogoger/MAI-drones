@@ -3,6 +3,7 @@ import sys
 
 from solver import run_optimal_solver, run_single_solver
 from recalc_solver import run_recalc_solver
+from runner import run_solve_tests
 
 def print_help():
     help_text = """
@@ -12,12 +13,16 @@ Modes:
   solve         Find paths for provided drones, coords, etc. Check data/example_solve.json for additional info
   optimal       Find paths and optimal amount of drones for a given coords
   recalc        Find paths for already dispatched drones
+  solve-tester  Run multiple tests for "solve" mode
 
 Options:
-  --data    Path to the data file (required)
-  --debug   Enable debug output (optional)
-  --random  Uses random data (optional)
-  --help    Show this help message and exit
+  --data        Path to the data file (required)
+  --debug       Enable debug output (optional)
+  --random      Uses random data (optional)
+  --help        Show this help message and exit
+
+Solve tester options:
+  --coords_n    Max amount of coords (required)
 """
     print(help_text)
 
@@ -27,10 +32,11 @@ def main():
         sys.exit(0)
 
     parser = argparse.ArgumentParser(description="Run a mode with a data file and optional debug output.", add_help=False)
-    parser.add_argument("mode", choices=["solve", "optimal", "recalc"], help="Mode of operation")
-    parser.add_argument("--data", required=True, help="Path to the data file")
+    parser.add_argument("mode", choices=["solve", "optimal", "recalc", "solve-tester"], help="Mode of operation")
+    parser.add_argument("--data", help="Path to the data file")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--random", action="store_true", help="Uses random data for recalc mode")
+    parser.add_argument("--coords_n", type=int, help="Max amount of coords (required)")
 
     args = parser.parse_args()
 
@@ -38,11 +44,20 @@ def main():
         "solve": run_single_solver,
         "optimal": run_optimal_solver,
         "recalc": run_recalc_solver,
+        "solve-tester": run_solve_tests,
     }
 
     mode_func = mode_function_map.get(args.mode)
     if args.debug:
         print(f"[DEBUG] Running {args.mode}() with data={args.data} and random={args.random}")
+    if args.mode == "solve-tester":
+        if not args.coords_n:
+            print("--coords_n arg is required")
+            sys.exit(1)
+        return mode_func(args.coords_n)
+    if not args.data:
+        print("--data arg is required")
+        sys.exit(1)
     mode_func(args.data, {'debug': args.debug, 'random': args.random})
 
 # TODO: add speed of drones

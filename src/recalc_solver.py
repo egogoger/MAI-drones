@@ -154,7 +154,7 @@ def solve_recalc(arrival, visits, departures, opt={}):
         print('u:\n', u.value)
         print('X_sol:\n', X_sol)
 
-    write_stats('recalc', drones_n, len(distance_matrix)-1, elapsed)
+    write_stats('recalc', len(departures), len(visits)+1, elapsed)
 
     departures_indexes = np.arange(1+len(visits), 1+len(visits)+len(departures))
     print_result(X_sol, all_coords, departures_indexes, distance_matrix)

@@ -72,8 +72,9 @@ def make_ruta(X_sol, departures_indexex, distance_matrix):
 ################################################
 def print_result(X_sol, coords, departures_indexes, distance_matrix):
     ruta = make_ruta(X_sol, departures_indexes, distance_matrix)
-    print_path(ruta)
-    plot_drone_routes(ruta, coords)
+    if not os.environ.get('NO_PLOTS'):
+        print_path(ruta)
+        plot_drone_routes(ruta, coords)
     return ruta
 
 """
