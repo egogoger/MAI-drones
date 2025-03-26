@@ -4,7 +4,7 @@ import numpy as np
 import cvxpy as cp
 
 from solver_utils import create_index_matrix, generate_random_points, get_distance_matrix, get_vars_and_obj, solve_problem
-from utils import evaluate_paths, print_result, write_stats
+from utils import evaluate_paths, get_iso_timestamp_for_filename, print_result, save_to_json, write_stats
 from constants import MAX_DRONES_N
 
 def get_constraints(X, u, drones_n, coords_n, opt={}):
@@ -102,13 +102,13 @@ def find_optimal_amount_of_drones(coords, max_drones_n, opt={}):
     for i in range(1, max_drones_n+1):
         ruta = solve(i, distance_matrix, coords, opt)
         rutas.append(ruta)
-        max_distance = max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance']
 
-        if max_distance < lowest_result:
-            lowest_result = max_distance
+        if ruta['operation_time'] < lowest_result:
+            lowest_result = ruta['operation_time']
             corresponding_i = i
-
+    
     evaluate_paths(rutas)
+    save_to_json(rutas, f'results/optimal_{max_drones_n}_{get_iso_timestamp_for_filename()}.json')
     return lowest_result, corresponding_i
 
 """
@@ -283,4 +283,4 @@ def run_single_solver(data_filepath, opt={}):
         print("[DEBUG] Coords", coords)
         print("[DEBUG] Distance matrix", distance_matrix)
     ruta = solve(drones_n, distance_matrix, coords, opt)
-    print("Max drone distance", round(max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance'], 3))
+    print(ruta)

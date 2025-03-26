@@ -13,10 +13,10 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
     
     ax.scatter(df['drones_n'], df['visits_n'], df['seconds'])
-    ax.set_xlabel('drones_n')
-    ax.set_ylabel('visits_n')
-    ax.set_zlabel('seconds')
-    plt.title('3D Scatter (Raw Data)')
+    ax.set_xlabel('Кол-во дронов')
+    ax.set_ylabel('Кол-во точек')
+    ax.set_zlabel('Время (сек)')
+    # plt.title('3D Scatter (Raw Data)')
     plt.show()
 
     # =========================================================
@@ -38,10 +38,10 @@ def main():
     ax = fig.add_subplot(111, projection='3d')
     ax.plot_surface(X, Y, Z)
     
-    ax.set_xlabel('drones_n')
-    ax.set_ylabel('visits_n')
-    ax.set_zlabel('seconds (median)')
-    plt.title('3D Surface (Median Aggregated)')
+    ax.set_xlabel('Кол-во дронов')
+    ax.set_ylabel('Кол-во точек')
+    ax.set_zlabel('Время (сек)')
+    # plt.title('3D Surface (Median Aggregated)')
     plt.show()
 
     # =========================================================
@@ -51,9 +51,9 @@ def main():
     plt.figure()
     sc = plt.scatter(df['drones_n'], df['visits_n'], c=df['seconds'])
     plt.colorbar(sc, label='seconds')
-    plt.xlabel('drones_n')
-    plt.ylabel('visits_n')
-    plt.title('2D Scatter with Color = seconds (Raw Data)')
+    plt.xlabel('Кол-во дронов')
+    plt.ylabel('Кол-во точек')
+    # plt.title('2D Scatter with Color = seconds (Raw Data)')
     plt.show()
 
 if __name__ == '__main__':

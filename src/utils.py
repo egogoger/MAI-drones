@@ -1,16 +1,17 @@
 import os
 import platform
+import json
+from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-from geopy import distance
 import folium
 
 ################################################
 # Написать оптимальный маршрут
 ################################################
 def print_path(ruta):
-    for i in ruta.keys():
-        print(i,' => '.join(map(str, ruta[i]['path'])))
+    for i in range(0, len(ruta['paths'])):
+        print(f'drone_{i+1}',' => '.join(map(str, ruta['paths'][i]['path'])))
 
 
 def plot_drone_routes(ruta, coords, output_file='drone_routes.html'):
@@ -20,7 +21,9 @@ def plot_drone_routes(ruta, coords, output_file='drone_routes.html'):
     colors = ['blue', 'green', 'red', 'purple', 'orange', 'darkred', 'cadetblue']
     color_cycle = iter(colors)
 
-    for i, (drone_id, info) in enumerate(ruta.items()):
+    for i in range(0, len(ruta['paths'])):
+        drone_id = f'drone_{i+1}'
+        info = ruta['paths'][i]
         path_indices = info['path']
         path_coords = [coords[i] for i in path_indices]
         color = next(color_cycle, 'gray')  # fallback to gray if colors run out
@@ -49,8 +52,9 @@ def plot_drone_routes(ruta, coords, output_file='drone_routes.html'):
 # Создать объект для вывода опт маршрута
 ################################################
 def make_ruta(X_sol, departures_indexex, distance_matrix):
+    drone_speed = 30 # kph
     arrival_index = 0
-    ruta = {}
+    ruta = {'paths': []}
     first_routes_indexes = np.where(np.isin(X_sol[:, 0], departures_indexex))[0]
     for i in range(0, len(first_routes_indexes)):
         first_route = X_sol[first_routes_indexes[i]]
@@ -64,7 +68,10 @@ def make_ruta(X_sol, departures_indexex, distance_matrix):
             from_node = int(path[j])
             to_node = int(path[j+1])
             dist += distance_matrix[from_node][to_node]
-        ruta['drone_' + str(i+1)] = {'path': path, 'distance': dist}
+        ruta['paths'].append({'path': path, 'distance': dist})
+    distances = [float(drone['distance']) for drone in ruta['paths']]
+    ruta['total_time'] = sum(distances)/drone_speed*60 # min
+    ruta['operation_time'] = max(distances)/drone_speed*60 # min
     return ruta
 
 ################################################
@@ -85,20 +92,14 @@ Parameters:
                     Format: {'drone_1': {'distance': float, 'path': [...]}, ...}
 """
 def evaluate_paths(rutas):
-    drone_speed = 30 # kph
     total_operational_times = []
     max_operational_times = []
     drone_counts = []
 
-    for scenario in rutas:
-        distances = [float(drone['distance']) for drone in scenario.values()]
-        total_distance = sum(distances)/drone_speed*60 # min
-        max_time = max(distances)/drone_speed*60 # min
-        num_drones = len(scenario)
-
-        total_operational_times.append(total_distance)
-        max_operational_times.append(max_time)
-        drone_counts.append(num_drones)
+    for ruta in rutas:
+        total_operational_times.append(ruta['total_time'])
+        max_operational_times.append(ruta['operation_time'])
+        drone_counts.append(len(ruta))
 
     # Calculate ranges and padding
     x_min, x_max = min(total_operational_times), max(total_operational_times)
@@ -124,9 +125,9 @@ def evaluate_paths(rutas):
         ax.annotate(f'{count} D', (total_operational_times[i], max_operational_times[i]),
                     textcoords="offset points", xytext=(0, 5), ha='center')
 
-    ax.set_xlabel('Total Fleet Distance [min]')
-    ax.set_ylabel('Max Operational Time [min]')
-    ax.set_title('Drone Deployment Trade-off: Distance vs Time')
+    ax.set_xlabel('Σ Время полёта (мин)')
+    ax.set_ylabel('Время операции (мин)')
+    ax.set_title('Оценка временной эффективности флота дронов')
     ax.grid(True)
 
     ax.set_xlim(xlim)
@@ -139,3 +140,32 @@ def evaluate_paths(rutas):
 def write_stats(mode, drones_n, visits_n, seconds):
     with open('stats.csv', 'a') as file:
         file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}\n')
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (np.integer,)):
+            return int(obj)
+        elif isinstance(obj, (np.floating,)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        return super().default(obj)
+
+def save_to_json(data, filename: str) -> None:
+    try:
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=2, cls=NumpyEncoder)
+        print(f"Data saved to {filename}")
+    except (TypeError, IOError) as e:
+        print(f"Failed to save data: {e}")
+
+"""
+Get the current timestamp in ISO 8601 format, safe for filenames.
+
+Returns:
+    str: A timestamp string like '2025-03-26T14-22-05'
+"""
+def get_iso_timestamp_for_filename() -> str:
+    now = datetime.now()
+    return now.isoformat(timespec='seconds').replace(":", "-")
+

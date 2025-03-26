@@ -29,6 +29,7 @@ Examples:
 python3 src/main.py solve --data data/example_solve.json
 python3 src/main.py solve --data data/example_solve_random.json --random
 python3 src/main.py optimal --data data/example_optimal.json
+python3 src/main.py recalc --data data/example_recalc.json
 NO_PLOTS=TRUE python3 src/main.py solve-tester --coords_n 10 --start_coords_n 5
 """
     print(help_text)
