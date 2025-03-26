@@ -97,10 +97,9 @@ def find_optimal_amount_of_drones(coords, max_drones_n, opt={}):
     distance_matrix = get_distance_matrix(coords)
     lowest_result = float('inf')
     corresponding_i = -1
-    max_cycles = max_drones_n
     rutas = []
 
-    for i in range(1, max_cycles):
+    for i in range(1, max_drones_n+1):
         ruta = solve(i, distance_matrix, coords, opt)
         rutas.append(ruta)
         max_distance = max(ruta.items(), key=lambda x: x[1]['distance'])[1]['distance']

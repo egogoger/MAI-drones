@@ -12,3 +12,8 @@ This project can solve mTSP problem like it's nothing.
 ```bash
 pip install -r requirements.txt
 ```
+
+## Run commands
+```bash
+NO_PLOTS=TRUE python3 src/main.py solve-tester --coords_n 10
+```

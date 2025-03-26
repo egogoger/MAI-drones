@@ -100,18 +100,40 @@ def evaluate_paths(rutas):
         max_operational_times.append(max_time)
         drone_counts.append(num_drones)
 
-    fig, ax = plt.subplots()
-    ax.scatter(total_operational_times, max_operational_times, c=drone_counts, cmap='viridis', s=100)
+    # Calculate ranges and padding
+    x_min, x_max = min(total_operational_times), max(total_operational_times)
+    y_min, y_max = min(max_operational_times), max(max_operational_times)
+    x_range = x_max - x_min
+    y_range = y_max - y_min
+    x_pad = x_range * 0.05 if x_range > 0 else 5
+    y_pad = y_range * 0.05 if y_range > 0 else 5
+
+    # Set limits with padding
+    xlim = (max(0, x_min - x_pad), x_max + x_pad)
+    ylim = (max(0, y_min - y_pad), y_max + y_pad)
+
+    # Match figure size to aspect
+    scale = 0.05
+    fig_width = (xlim[1] - xlim[0]) * scale
+    fig_height = (ylim[1] - ylim[0]) * scale
+
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    scatter = ax.scatter(total_operational_times, max_operational_times, c=drone_counts, cmap='viridis', s=100)
 
     for i, count in enumerate(drone_counts):
-        ax.annotate(f'{count} D', (total_operational_times[i], max_operational_times[i]), textcoords="offset points", xytext=(0,5), ha='center')
+        ax.annotate(f'{count} D', (total_operational_times[i], max_operational_times[i]),
+                    textcoords="offset points", xytext=(0, 5), ha='center')
 
     ax.set_xlabel('Total Fleet Distance [min]')
     ax.set_ylabel('Max Operational Time [min]')
     ax.set_title('Drone Deployment Trade-off: Distance vs Time')
     ax.grid(True)
+
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
     ax.set_aspect('equal', adjustable='box')
-    ax.set_ylim(bottom=0)
+
+    plt.tight_layout()
     plt.show()
 
 def write_stats(mode, drones_n, visits_n, seconds):

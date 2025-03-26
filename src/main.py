@@ -7,7 +7,7 @@ from runner import run_solve_tests
 
 def print_help():
     help_text = """
-Usage: script.py <mode> --data <file_path> [--debug] [--random]
+Usage: main.py <mode> --data <file_path> [--debug] [--random]
 
 Modes:
   solve         Find paths for provided drones, coords, etc. Check data/example_solve.json for additional info
@@ -23,6 +23,13 @@ Options:
 
 Solve tester options:
   --coords_n    Max amount of coords (required)
+  --start_coords_n    Max amount of coords (required)
+
+Examples:
+python3 src/main.py solve --data data/example_solve.json
+python3 src/main.py solve --data data/example_solve_random.json --random
+python3 src/main.py optimal --data data/example_optimal.json
+NO_PLOTS=TRUE python3 src/main.py solve-tester --coords_n 10 --start_coords_n 5
 """
     print(help_text)
 
@@ -37,6 +44,7 @@ def main():
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--random", action="store_true", help="Uses random data for recalc mode")
     parser.add_argument("--coords_n", type=int, help="Max amount of coords (required)")
+    parser.add_argument("--start_coords_n", type=int, default=2, help="Starting amount of coords")
 
     args = parser.parse_args()
 
@@ -54,7 +62,7 @@ def main():
         if not args.coords_n:
             print("--coords_n arg is required")
             sys.exit(1)
-        return mode_func(args.coords_n)
+        return mode_func(args.start_coords_n, args.coords_n)
     if not args.data:
         print("--data arg is required")
         sys.exit(1)
