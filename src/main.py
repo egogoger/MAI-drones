@@ -3,6 +3,7 @@ import sys
 
 from solver import run_optimal_solver, run_single_solver
 from recalc_solver import run_recalc_solver
+from mmvrp_solver import run_mmvrp_solver
 from runner import run_solve_tests
 
 def print_help():
@@ -13,6 +14,7 @@ Modes:
   solve         Find paths for provided drones, coords, etc. Check data/example_solve.json for additional info
   optimal       Find paths and optimal amount of drones for a given coords
   recalc        Find paths for already dispatched drones
+  mmvrp         Solve min-max VRP
   solve-tester  Run multiple tests for "solve" mode
 
 Options:
@@ -30,6 +32,7 @@ python3 src/main.py solve --data data/example_solve.json
 python3 src/main.py solve --data data/example_solve_random.json --random
 python3 src/main.py optimal --data data/example_optimal.json
 python3 src/main.py recalc --data data/example_recalc.json
+python3 src/main.py mmvrp --data data/example_solve.json
 NO_PLOTS=TRUE python3 src/main.py solve-tester --coords_n 10 --start_coords_n 5
 """
     print(help_text)
@@ -40,7 +43,7 @@ def main():
         sys.exit(0)
 
     parser = argparse.ArgumentParser(description="Run a mode with a data file and optional debug output.", add_help=False)
-    parser.add_argument("mode", choices=["solve", "optimal", "recalc", "solve-tester"], help="Mode of operation")
+    parser.add_argument("mode", choices=["solve", "optimal", "recalc", "mmvrp", "solve-tester"], help="Mode of operation")
     parser.add_argument("--data", help="Path to the data file")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--random", action="store_true", help="Uses random data for recalc mode")
@@ -53,6 +56,7 @@ def main():
         "solve": run_single_solver,
         "optimal": run_optimal_solver,
         "recalc": run_recalc_solver,
+        "mmvrp": run_mmvrp_solver,
         "solve-tester": run_solve_tests,
     }
 

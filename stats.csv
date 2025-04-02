@@ -1695,3 +1695,9 @@ solve,37,40,1.503,16,Windows
 solve,38,40,1.481,16,Windows
 solve,39,40,1.441,16,Windows
 solve,40,40,1.5,16,Windows
+mmvrp,3,6,0.326,16,Windows
+mmvrp,3,6,0.284,16,Windows
+solve,3,6,0.043,16,Windows
+mmvrp,3,6,0.289,16,Windows
+mmvrp,3,6,0.277,16,Windows
+solve,3,6,0.032,16,Windows

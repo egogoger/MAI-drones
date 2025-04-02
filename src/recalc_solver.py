@@ -136,7 +136,6 @@ def get_constraints2(X, u, visits_n, departures_n, coords_n, opt={}):
 
     return c
 
-
 # This function only solves the task when drones have already departed
 def solve_recalc(arrival, visits, departures, opt={}):
     debug = opt.get('debug', False)
