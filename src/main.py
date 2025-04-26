@@ -4,7 +4,7 @@ import sys
 from solver import run_optimal_solver, run_single_solver
 from recalc_solver import run_recalc_solver
 from mmvrp_solver import run_mmvrp_solver
-from runner import run_solve_tests
+from runner import run_solve_tests, run_mmvrp_tests
 
 def print_help():
     help_text = """
@@ -16,6 +16,7 @@ Modes:
   recalc        Find paths for already dispatched drones
   mmvrp         Solve min-max VRP
   solve-tester  Run multiple tests for "solve" mode
+  mmvrp-tester  Run multiple tests for "mmvrp" mode
 
 Options:
   --data        Path to the data file (required)
@@ -23,7 +24,7 @@ Options:
   --random      Uses random data (optional)
   --help        Show this help message and exit
 
-Solve tester options:
+Tester options:
   --coords_n    Max amount of coords (required)
   --start_coords_n    Max amount of coords (required)
 
@@ -34,6 +35,7 @@ python3 src/main.py optimal --data data/example_optimal.json
 python3 src/main.py recalc --data data/example_recalc.json
 python3 src/main.py mmvrp --data data/example_solve.json
 NO_PLOTS=TRUE python3 src/main.py solve-tester --coords_n 10 --start_coords_n 5
+NO_PLOTS=TRUE python3 src/main.py mmvrp-tester --coords_n 10 --start_coords_n 5
 """
     print(help_text)
 
@@ -43,7 +45,7 @@ def main():
         sys.exit(0)
 
     parser = argparse.ArgumentParser(description="Run a mode with a data file and optional debug output.", add_help=False)
-    parser.add_argument("mode", choices=["solve", "optimal", "recalc", "mmvrp", "solve-tester"], help="Mode of operation")
+    parser.add_argument("mode", choices=["solve", "optimal", "recalc", "mmvrp", "solve-tester", "mmvrp-tester"], help="Mode of operation")
     parser.add_argument("--data", help="Path to the data file")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument("--random", action="store_true", help="Uses random data for recalc mode")
@@ -58,12 +60,13 @@ def main():
         "recalc": run_recalc_solver,
         "mmvrp": run_mmvrp_solver,
         "solve-tester": run_solve_tests,
+        "mmvrp-tester": run_mmvrp_tests,
     }
 
     mode_func = mode_function_map.get(args.mode)
     if args.debug:
         print(f"[DEBUG] Running {args.mode}() with data={args.data} and random={args.random}")
-    if args.mode == "solve-tester":
+    if "tester" in args.mode:
         if not args.coords_n:
             print("--coords_n arg is required")
             sys.exit(1)
