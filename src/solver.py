@@ -9,6 +9,7 @@ from constants import MAX_DRONES_N
 
 def get_constraints(X, u, drones_n, coords_n, opt={}):
     debug = opt.get('debug', False)
+    forced_paths = opt.get('forced_paths', None)
 
     ones = np.ones((coords_n, 1))
     c = []
@@ -69,6 +70,13 @@ def get_constraints(X, u, drones_n, coords_n, opt={}):
             if i != j:
                 c += [ u[i] - u[j] + 1  <= (coords_n - 1) * (1 - X[i, j]) ]
 
+    # (10) Force required paths
+    if forced_paths is not None:
+        for from_node, to_node in forced_paths:
+            c += [X[from_node, to_node] + X[to_node, from_node] >= 1]
+            if debug:
+                print(f'(10) Forced bidirectional path: {from_node} <-> {to_node}')
+
     return c
 
 ################################################
@@ -76,8 +84,9 @@ def get_constraints(X, u, drones_n, coords_n, opt={}):
 ################################################
 def solve(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
+    forced_paths = opt.get('forced_paths', None)
     departure_i = 0
-    print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
+    print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}{f'(forced_paths={len(forced_paths)})' if forced_paths else ""}')
     X, u, objective = get_vars_and_obj(distance_matrix)
     constraints = get_constraints(X, u, drones_n, len(coords), opt)
     X_sol, elapsed = solve_problem(objective, constraints, X)
@@ -278,6 +287,9 @@ def run_single_solver(data_filepath, opt={}):
         input = get_single_solver_input(data_filepath)
         coords = input["coords"]
         drones_n = input["drones_n"]
+        forced_paths = input["forced_paths"]
+        if forced_paths:
+            opt["forced_paths"] = forced_paths
     distance_matrix = get_distance_matrix(coords)
     if debug:
         print("[DEBUG] Coords", coords)
