@@ -72,6 +72,8 @@ def make_ruta(X_sol, departures_indexex, distance_matrix):
     distances = [float(drone['distance']) for drone in ruta['paths']]
     ruta['total_time'] = sum(distances)/drone_speed*60 # min
     ruta['operation_time'] = max(distances)/drone_speed*60 # min
+    ruta['max_distance'] = max(distances)
+    ruta['sum_distance'] = sum(distances)
     return ruta
 
 ################################################
@@ -139,7 +141,7 @@ def evaluate_paths(rutas):
 
 def write_stats(mode, drones_n, visits_n, seconds, forced_paths):
     with open('stats.csv', 'a') as file:
-        file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}{len(forced_paths) if forced_paths else 0}\n')
+        file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}{','+len(forced_paths) if forced_paths else 0}\n')
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):

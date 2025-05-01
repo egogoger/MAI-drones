@@ -72,7 +72,7 @@ def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
         print('[DEBUG] X_sol (решение):\n', X_sol)
         print('[DEBUG] T (максимальный путь):\n', T.value)
 
-    write_stats('mmvrp', drones_n, len(distance_matrix)-1, elapsed)
+    write_stats('mmvrp', drones_n, len(distance_matrix)-1, elapsed, 0)
 
     paths = []
     max_distance = 0.0

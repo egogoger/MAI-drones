@@ -96,7 +96,7 @@ def solve(drones_n, distance_matrix, coords, opt={}):
         print('[DEBUG] u:\n', u.value)
         print('[DEBUG] X_sol:\n', X_sol)
 
-    write_stats('solve', drones_n, len(distance_matrix)-1, elapsed)
+    write_stats('solve', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
 
     # Вывод длины оптимального маршрута
     ruta = print_result(X_sol, coords, departure_i, distance_matrix)
@@ -287,9 +287,10 @@ def run_single_solver(data_filepath, opt={}):
         input = get_single_solver_input(data_filepath)
         coords = input["coords"]
         drones_n = input["drones_n"]
-        forced_paths = input["forced_paths"]
-        if forced_paths:
-            opt["forced_paths"] = forced_paths
+        if "forced_paths" in input:
+            forced_paths = input["forced_paths"]
+            if forced_paths:
+                opt["forced_paths"] = forced_paths
     distance_matrix = get_distance_matrix(coords)
     if debug:
         print("[DEBUG] Coords", coords)
