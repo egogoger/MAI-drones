@@ -1796,3 +1796,13 @@ solve,5,99,612.871,16,Windows,40
 solve,4,14,0.203,16,Windows,0
 solve,4,14,0.202,16,Windows,0
 mmvrp,4,14,141.412,16,Windows,0
+solve,4,14,0.16,16,Windows,4
+solve,4,14,0.243,16,Windows,4
+solve,4,14,0.154,16,Windows,4
+mmvrp,4,14,140.522,16,Windows,0
+mmvrp,4,14,22.886,16,Windows,4
+solve,4,14,0.262,16,Windows,4
+solve,4,14,0.155,16,Windows,4
+solve,4,14,0.153,16,Windows,4
+solve,4,14,0.249,16,Windows,4
+mmvrp,4,21,4.848,16,Windows,10

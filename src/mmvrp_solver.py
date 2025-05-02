@@ -55,6 +55,7 @@ def compute_path_distance(route, distance_matrix):
 
 def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
+    forced_paths = opt.get('forced_paths', None)
     coords_n = len(coords)
     departure_i = 0
 
@@ -72,24 +73,28 @@ def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
         print('[DEBUG] X_sol (решение):\n', X_sol)
         print('[DEBUG] T (максимальный путь):\n', T.value)
 
-    write_stats('mmvrp', drones_n, len(distance_matrix)-1, elapsed, 0)
+    write_stats('mmvrp', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
 
     paths = []
+    sum_distance = 0.0
     max_distance = 0.0
 
     for k, X_k in enumerate(X_sol):
         route = extract_route(X_k, departure_i)
         distance = compute_path_distance(route, distance_matrix)
         paths.append({
-            "path": [np.int64(i) for i in route],
-            "distance": np.float64(distance)
+            "path": [i for i in route],
+            "distance": distance
         })
         max_distance = max(max_distance, distance)
+        sum_distance += distance
 
     ruta = {
         "paths": paths,
         "total_time": elapsed,
-        "operation_time": np.float64(max_distance)
+        "operation_time": max_distance,
+        "max_distance": max_distance,
+        "sum_distance": sum_distance
     }
 
     if not os.environ.get('NO_PLOTS'):
@@ -100,6 +105,9 @@ def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
 
 
 def get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt={}):
+    debug = opt.get('debug', False)
+    forced_paths = opt.get('forced_paths', None)
+
     X = cp.Variable((drones_n, coords_n, coords_n), boolean=True)
     u = cp.Variable((drones_n, coords_n), integer=True)
     T = cp.Variable()
@@ -159,13 +167,26 @@ def get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt={}
     for d in drone_distances:
         constraints.append(d <= T)
 
+    # (8) Force required paths
+    if forced_paths is not None:
+        for from_node, to_node in forced_paths:
+            constraints += [cp.sum(X[:, from_node, to_node]) + cp.sum(X[:, to_node, from_node]) == 1]
+            if debug:
+                print(f'(10) Forced bidirectional path: {from_node} <-> {to_node}')
+
     # Цель: минимизировать максимальное расстояние
     objective = cp.Minimize(T)
 
     return X, u, T, objective, constraints
 
 def run_mmvrp_solver(filepath, opt={}):
+    debug = opt.get('debug', False)
     input = get_single_solver_input(filepath)
     distance_matrix = get_distance_matrix(input["coords"])
+    if debug:
+        print("[DEBUG] Coords", input["coords"])
+        print("[DEBUG] Distance matrix", distance_matrix)
+    if "forced_paths" in input:
+        opt["forced_paths"] = input["forced_paths"]
     ruta = solve_mmvrp(input["drones_n"], distance_matrix, input["coords"], opt)
     print(ruta)

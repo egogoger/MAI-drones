@@ -141,7 +141,7 @@ def evaluate_paths(rutas):
 
 def write_stats(mode, drones_n, visits_n, seconds, forced_paths):
     with open('stats.csv', 'a') as file:
-        file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}{','+len(forced_paths) if forced_paths else 0}\n')
+        file.write(f'{mode},{drones_n},{visits_n},{seconds},{os.cpu_count()},{platform.system()}{','+str(len(forced_paths)) if forced_paths else 0}\n')
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):

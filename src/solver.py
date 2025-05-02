@@ -73,7 +73,7 @@ def get_constraints(X, u, drones_n, coords_n, opt={}):
     # (10) Force required paths
     if forced_paths is not None:
         for from_node, to_node in forced_paths:
-            c += [X[from_node, to_node] + X[to_node, from_node] >= 1]
+            c += [X[from_node, to_node] + X[to_node, from_node] >= 0.999]
             if debug:
                 print(f'(10) Forced bidirectional path: {from_node} <-> {to_node}')
 
