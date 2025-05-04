@@ -56,10 +56,11 @@ def compute_path_distance(route, distance_matrix):
 def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
     forced_paths = opt.get('forced_paths', None)
+    allow_multiple_visits = opt.get('allow_multiple_visits', False)
     coords_n = len(coords)
     departure_i = 0
 
-    print(f'Решаем Min-Max VRP для {drones_n} дрон{"a" if drones_n == 1 else "ов"}')
+    print(f'Решаем Min-Max VRP для {drones_n} дрон{"a" if drones_n == 1 else "ов"} {"повторые посещения разрешены" if allow_multiple_visits else ""}')
 
     # Получение переменных, цели и ограничений
     X, u, T, objective, constraints = get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt)
@@ -73,7 +74,7 @@ def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
         print('[DEBUG] X_sol (решение):\n', X_sol)
         print('[DEBUG] T (максимальный путь):\n', T.value)
 
-    write_stats('mmvrp', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
+    write_stats('mmvrp-m' if allow_multiple_visits else 'mmvrp', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
 
     paths = []
     sum_distance = 0.0
@@ -107,6 +108,7 @@ def solve_mmvrp(drones_n, distance_matrix, coords, opt={}):
 def get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt={}):
     debug = opt.get('debug', False)
     forced_paths = opt.get('forced_paths', None)
+    allow_multiple_visits = opt.get('allow_multiple_visits', False)
 
     X = cp.Variable((drones_n, coords_n, coords_n), boolean=True)
     u = cp.Variable((drones_n, coords_n), integer=True)
@@ -132,10 +134,16 @@ def get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt={}
 
     # (3) Каждая точка (кроме 0) посещается ровно 1 раз
     for j in range(1, coords_n):
-        constraints += [
-            cp.sum(X[:, :, j]) == 1,
-            cp.sum(X[:, j, :]) == 1
-        ]
+        if allow_multiple_visits:
+            constraints += [
+                cp.sum(X[:, :, j]) >= 1,
+                cp.sum(X[:, j, :]) >= 1
+            ]
+        else:
+            constraints += [
+                cp.sum(X[:, :, j]) == 1,
+                cp.sum(X[:, j, :]) == 1
+            ]
 
     # (4) Дроны не посещают точку более одного раза и не летают в саму себя
     for k in range(drones_n):
@@ -170,7 +178,7 @@ def get_vars_and_obj_and_constraints(distance_matrix, drones_n, coords_n, opt={}
     # (8) Force required paths
     if forced_paths is not None:
         for from_node, to_node in forced_paths:
-            constraints += [cp.sum(X[:, from_node, to_node]) + cp.sum(X[:, to_node, from_node]) == 1]
+            constraints += [cp.sum(X[:, from_node, to_node]) + cp.sum(X[:, to_node, from_node]) >= 0.999]
             if debug:
                 print(f'(10) Forced bidirectional path: {from_node} <-> {to_node}')
 
@@ -188,5 +196,7 @@ def run_mmvrp_solver(filepath, opt={}):
         print("[DEBUG] Distance matrix", distance_matrix)
     if "forced_paths" in input:
         opt["forced_paths"] = input["forced_paths"]
+    if "allow_multiple_visits" in input:
+        opt["allow_multiple_visits"] = input["allow_multiple_visits"]
     ruta = solve_mmvrp(input["drones_n"], distance_matrix, input["coords"], opt)
     print(ruta)

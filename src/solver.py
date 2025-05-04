@@ -85,6 +85,7 @@ def get_constraints(X, u, drones_n, coords_n, opt={}):
 def solve(drones_n, distance_matrix, coords, opt={}):
     debug = opt.get('debug', False)
     forced_paths = opt.get('forced_paths', None)
+    allow_multiple_visits = opt.get('allow_multiple_visits', False)
     departure_i = 0
     print(f'Решаем для {drones_n} дрон{"a" if drones_n == 1 else "ов"}{f'(forced_paths={len(forced_paths)})' if forced_paths else ""}')
     X, u, objective = get_vars_and_obj(distance_matrix)
@@ -96,7 +97,7 @@ def solve(drones_n, distance_matrix, coords, opt={}):
         print('[DEBUG] u:\n', u.value)
         print('[DEBUG] X_sol:\n', X_sol)
 
-    write_stats('solve', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
+    write_stats('solve-m' if allow_multiple_visits else 'solve', drones_n, len(distance_matrix)-1, elapsed, forced_paths)
 
     # Вывод длины оптимального маршрута
     ruta = print_result(X_sol, coords, departure_i, distance_matrix)

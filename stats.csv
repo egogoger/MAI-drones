@@ -1806,3 +1806,16 @@ solve,4,14,0.155,16,Windows,4
 solve,4,14,0.153,16,Windows,4
 solve,4,14,0.249,16,Windows,4
 mmvrp,4,21,4.848,16,Windows,10
+mmvrp,4,21,12.93,16,Windows,10
+mmvrp,4,20,12.605,16,Windows,10
+mmvrp-m,4,20,86.691,16,Windows,10
+mmvrp,4,21,5.362,16,Windows,10
+solve,1,36,2.147,16,Windows,9
+solve,3,36,1.933,16,Windows,9
+solve,2,36,1.731,16,Windows,9
+solve,2,36,2.072,16,Windows,5
+solve,2,36,2.041,16,Windows,3
+solve,2,36,1.873,16,Windows,0
+mmvrp,4,21,4.247,16,Windows,10
+mmvrp,4,21,4.408,16,Windows,10
+solve,4,21,0.333,16,Windows,10
